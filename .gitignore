@@ -122,3 +122,5 @@ cstool/cstool
 
 # android
 android-ndk-*
+/msvc/.vs/capstone/v16/Solution.VC.db-wal
+/msvc/.vs/capstone/v16/Solution.VC.db-shm
