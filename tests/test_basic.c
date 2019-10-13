@@ -58,7 +58,7 @@ static void test()
 //#define ARM64_CODE "\xe1\x0b\x40\xb9"	// ldr		w1, [sp, #0x8]
 #define ARM64_CODE "\x21\x7c\x02\x9b\x21\x7c\x00\x53\x00\x40\x21\x4b\xe1\x0b\x40\xb9"
 #endif
-#ifdef CAPSTONE_HAS_PPC
+#ifdef CAPSTONE_HAS_POWERPC
 #define PPC_CODE "\x80\x20\x00\x00\x80\x3f\x00\x00\x10\x43\x23\x0e\xd0\x44\x00\x80\x4c\x43\x22\x02\x2d\x03\x00\x80\x7c\x43\x20\x14\x7c\x43\x20\x93\x4f\x20\x00\x21\x4c\xc8\x00\x21"
 #define PPC_CODE2 "\x10\x60\x2a\x10\x10\x64\x28\x88\x7c\x4a\x5d\x0f"
 #endif
@@ -83,6 +83,10 @@ static void test()
 #endif
 #ifdef CAPSTONE_HAS_EVM
 #define EVM_CODE "\x60\x61"
+#endif
+
+#ifdef CAPSTONE_HAS_MOS65XX
+#define MOS65XX_CODE "\x0d\x34\x12\x00\x81\x65\x6c\x01\x00\x85\xFF\x10\x00\x19\x42\x42\x00\x49\x42"
 #endif
 
 
@@ -220,7 +224,7 @@ static void test()
 			"ARM-64"
 		},
 #endif
-#ifdef CAPSTONE_HAS_PPC
+#ifdef CAPSTONE_HAS_POWERPC
 		{
 			CS_ARCH_PPC,
 			CS_MODE_BIG_ENDIAN,
@@ -313,6 +317,15 @@ static void test()
 			(unsigned char*)EVM_CODE,
 			sizeof(EVM_CODE) - 1,
 			"EVM",
+		},
+#endif
+#ifdef CAPSTONE_HAS_MOS65XX
+		{
+			CS_ARCH_MOS65XX,
+			0,
+			(unsigned char *)MOS65XX_CODE,
+			sizeof(MOS65XX_CODE) - 1,
+			"MOS65XX"
 		},
 #endif
 	};

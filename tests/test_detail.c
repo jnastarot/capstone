@@ -66,7 +66,7 @@ static void test()
 #endif
 //#define THUMB_CODE "\x0a\xbf" // itet eq
 //#define X86_CODE32 "\x77\x04"	// ja +6
-#ifdef CAPSTONE_HAS_PPC
+#ifdef CAPSTONE_HAS_POWERPC
 #define PPC_CODE "\x80\x20\x00\x00\x80\x3f\x00\x00\x10\x43\x23\x0e\xd0\x44\x00\x80\x4c\x43\x22\x02\x2d\x03\x00\x80\x7c\x43\x20\x14\x7c\x43\x20\x93\x4f\x20\x00\x21\x4c\xc8\x00\x21\x40\x82\x00\x14"
 #define PPC_CODE2 "\x10\x60\x2a\x10\x10\x64\x28\x88\x7c\x4a\x5d\x0f"
 #endif
@@ -85,6 +85,9 @@ static void test()
 #endif
 #ifdef CAPSTONE_HAS_M680X
 #define M680X_CODE "\x06\x10\x19\x1a\x55\x1e\x01\x23\xe9\x31\x06\x34\x55\xa6\x81\xa7\x89\x7f\xff\xa6\x9d\x10\x00\xa7\x91\xa6\x9f\x10\x00\x11\xac\x99\x10\x00\x39"
+#endif
+#ifdef CAPSTONE_HAS_MOS65XX
+#define MOS65XX_CODE "\x0A\x00\xFE\x34\x12\xD0\xFF\xEA\x19\x56\x34\x46\x80"
 #endif
 
 
@@ -204,7 +207,7 @@ static void test()
 			"ARM-64"
 		},
 #endif
-#ifdef CAPSTONE_HAS_PPC
+#ifdef CAPSTONE_HAS_POWERPC
 		{
 			CS_ARCH_PPC,
 			CS_MODE_BIG_ENDIAN,
@@ -270,6 +273,15 @@ static void test()
 			(unsigned char*)M680X_CODE,
 			sizeof(M680X_CODE) - 1,
 			"M680X_M6809",
+		},
+#endif
+#ifdef CAPSTONE_HAS_MOS65XX
+		{
+				CS_ARCH_MOS65XX,
+				(cs_mode)0,
+				(unsigned char*)MOS65XX_CODE,
+				sizeof(MOS65XX_CODE) - 1,
+				"MOS65XX",
 		},
 #endif
 	};

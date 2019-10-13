@@ -10,7 +10,7 @@ V ?= 0
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
-LIBARCHS = x86_64
+LIBARCHS ?= x86_64
 PREFIX ?= /usr/local
 endif
 
@@ -22,6 +22,11 @@ endif
 
 ifeq ($(CROSS),)
 RANLIB ?= ranlib
+else ifeq ($(ANDROID), 1)
+CC = $(CROSS)/../../bin/clang
+AR = $(CROSS)/ar
+RANLIB = $(CROSS)/ranlib
+STRIP = $(CROSS)/strip
 else
 CC = $(CROSS)gcc
 AR = $(CROSS)ar
@@ -40,7 +45,7 @@ ifneq (,$(findstring yes,$(CAPSTONE_X86_ATT_DISABLE)))
 CFLAGS += -DCAPSTONE_X86_ATT_DISABLE
 endif
 
-CFLAGS += -fPIC -Wall -Wwrite-strings -Iinclude
+CFLAGS += -fPIC -Wall -Wwrite-strings -Wmissing-prototypes -Iinclude
 
 ifeq ($(CAPSTONE_USE_SYS_DYN_MEM),yes)
 CFLAGS += -DCAPSTONE_USE_SYS_DYN_MEM
@@ -250,9 +255,21 @@ ifneq (,$(findstring evm,$(CAPSTONE_ARCHS)))
 endif
 
 
+DEP_MOS65XX =
+DEP_MOS65XX += $(wildcard arch/MOS65XX/MOS65XX*.inc)
+
+LIBOBJ_MOS65XX =
+ifneq (,$(findstring mos65xx,$(CAPSTONE_ARCHS)))
+	CFLAGS += -DCAPSTONE_HAS_MOS65XX
+	LIBSRC_MOS65XX += $(wildcard arch/MOS65XX/MOS65XX*.c)
+	LIBOBJ_MOS65XX += $(LIBSRC_MOS65XX:%.c=$(OBJDIR)/%.o)
+endif
+
+
 LIBOBJ =
 LIBOBJ += $(OBJDIR)/cs.o $(OBJDIR)/utils.o $(OBJDIR)/SStream.o $(OBJDIR)/MCInstrDesc.o $(OBJDIR)/MCRegisterInfo.o
-LIBOBJ += $(LIBOBJ_ARM) $(LIBOBJ_ARM64) $(LIBOBJ_M68K) $(LIBOBJ_MIPS) $(LIBOBJ_PPC) $(LIBOBJ_SPARC) $(LIBOBJ_SYSZ) $(LIBOBJ_X86) $(LIBOBJ_XCORE) $(LIBOBJ_TMS320C64X) $(LIBOBJ_M680X) $(LIBOBJ_EVM)
+LIBOBJ += $(LIBOBJ_ARM) $(LIBOBJ_ARM64) $(LIBOBJ_M68K) $(LIBOBJ_MIPS) $(LIBOBJ_PPC) $(LIBOBJ_SPARC) $(LIBOBJ_SYSZ)
+LIBOBJ += $(LIBOBJ_X86) $(LIBOBJ_XCORE) $(LIBOBJ_TMS320C64X) $(LIBOBJ_M680X) $(LIBOBJ_EVM) $(LIBOBJ_MOS65XX)
 LIBOBJ += $(OBJDIR)/MCInst.o
 
 
@@ -381,6 +398,7 @@ $(LIBOBJ_XCORE): $(DEP_XCORE)
 $(LIBOBJ_TMS320C64X): $(DEP_TMS320C64X)
 $(LIBOBJ_M680X): $(DEP_M680X)
 $(LIBOBJ_EVM): $(DEP_EVM)
+$(LIBOBJ_MOS65XX): $(DEP_MOS65XX)
 
 ifeq ($(CAPSTONE_STATIC),yes)
 $(ARCHIVE): $(LIBOBJ)
@@ -424,6 +442,7 @@ clean:
 	rm -f $(LIBOBJ)
 	rm -f $(BLDIR)/lib$(LIBNAME).* $(BLDIR)/$(LIBNAME).pc
 	rm -f $(PKGCFGF)
+	[ "${ANDROID}" = "1" ] && rm -rf android-ndk-* || true
 	$(MAKE) -C cstool clean
 
 ifeq (,$(findstring yes,$(CAPSTONE_BUILD_CORE_ONLY)))
@@ -456,11 +475,12 @@ dist:
 
 
 TESTS = test_basic test_detail test_arm test_arm64 test_m68k test_mips test_ppc test_sparc
-TESTS += test_systemz test_x86 test_xcore test_iter test_evm
+TESTS += test_systemz test_x86 test_xcore test_iter test_evm test_mos65xx
 TESTS += test_basic.static test_detail.static test_arm.static test_arm64.static
 TESTS += test_m68k.static test_mips.static test_ppc.static test_sparc.static
 TESTS += test_systemz.static test_x86.static test_xcore.static test_m680x.static
 TESTS += test_skipdata test_skipdata.static test_iter.static test_evm.static
+TESTS += test_mos65xx.static
 check: $(TESTS) fuzztest fuzzallcorp
 test_%:
 	./tests/$@ > /dev/null && echo OK || echo FAILED
@@ -471,7 +491,11 @@ fuzztest:
 	./suite/fuzz/fuzz_disasm $(FUZZ_INPUTS)
 
 fuzzallcorp:
+ifneq ($(wildcard suite/fuzz/corpus-libFuzzer-capstone_fuzz_disasmnext-latest),)
 	./suite/fuzz/fuzz_bindisasm suite/fuzz/corpus-libFuzzer-capstone_fuzz_disasmnext-latest/
+else
+	@echo "Skipping tests on whole corpus"
+endif
 
 $(OBJDIR)/%.o: %.c
 	@mkdir -p $(@D)
